@@ -1,0 +1,930 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Habit Review Board</title>
+  <style>
+    :root {
+      --ink: #20242c;
+      --muted: #657080;
+      --line: #d7dee8;
+      --paper: #f3f6f8;
+      --panel: #ffffff;
+      --blue: #285fc7;
+      --green: #15755d;
+      --rose: #b7435f;
+      --gold: #a36a12;
+      --shadow: 0 18px 46px rgba(31, 38, 48, .12);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--ink);
+      background:
+        linear-gradient(120deg, rgba(21, 117, 93, .11), transparent 34%),
+        linear-gradient(245deg, rgba(40, 95, 199, .10), transparent 35%),
+        var(--paper);
+    }
+
+    button, input, select, textarea { font: inherit; }
+
+    button {
+      min-height: 38px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      color: var(--ink);
+      padding: 0 12px;
+      cursor: pointer;
+    }
+
+    button:hover { border-color: #aab4c1; }
+    button.primary { background: var(--green); border-color: var(--green); color: #fff; }
+    button.icon { width: 38px; padding: 0; display: inline-grid; place-items: center; }
+
+    .app {
+      width: min(1260px, calc(100vw - 28px));
+      margin: 0 auto;
+      padding: 24px 0 36px;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: end;
+      gap: 18px;
+      padding: 12px 0 22px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(2.1rem, 6vw, 4.7rem);
+      line-height: .94;
+      letter-spacing: 0;
+    }
+
+    .sub {
+      margin-top: 10px;
+      color: var(--muted);
+      line-height: 1.5;
+      max-width: 720px;
+    }
+
+    .actions, .inline-actions {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 400px;
+      gap: 18px;
+      align-items: start;
+    }
+
+    .panel {
+      background: rgba(255, 255, 255, .84);
+      border: 1px solid rgba(215, 222, 232, .92);
+      border-radius: 12px;
+      box-shadow: var(--shadow);
+      padding: 16px;
+      backdrop-filter: blur(10px);
+    }
+
+    .section-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    h2 {
+      margin: 0;
+      font-size: 1rem;
+      letter-spacing: 0;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .stat, .detail-stat {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 12px;
+    }
+
+    .stat span, .detail-stat span {
+      display: block;
+      color: var(--muted);
+      font-size: .78rem;
+      margin-bottom: 7px;
+    }
+
+    .stat b, .detail-stat b {
+      font-size: 1.42rem;
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
+    }
+
+    label {
+      display: grid;
+      gap: 6px;
+      color: var(--muted);
+      font-size: .82rem;
+    }
+
+    input, select, textarea {
+      width: 100%;
+      min-height: 38px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      color: var(--ink);
+      padding: 8px 10px;
+      outline: none;
+    }
+
+    textarea {
+      min-height: 88px;
+      resize: vertical;
+      line-height: 1.45;
+    }
+
+    input:focus, select:focus, textarea:focus {
+      border-color: var(--green);
+      box-shadow: 0 0 0 3px rgba(21, 117, 93, .13);
+    }
+
+    .form {
+      display: grid;
+      grid-template-columns: minmax(180px, 1fr) 110px 120px 130px auto;
+      gap: 10px;
+      align-items: end;
+      margin-bottom: 14px;
+    }
+
+    .habits, .side, .reviews, .detail-grid {
+      display: grid;
+      gap: 10px;
+    }
+
+    .habit {
+      display: grid;
+      gap: 11px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+    }
+
+    .habit.active {
+      border-color: var(--blue);
+      box-shadow: 0 0 0 3px rgba(40, 95, 199, .12);
+    }
+
+    .habit-head, .line {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .habit strong, .line strong {
+      overflow-wrap: anywhere;
+    }
+
+    .meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      color: var(--muted);
+      font-size: .8rem;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      min-height: 24px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: #fafbfd;
+      padding: 0 8px;
+      color: var(--muted);
+      font-size: .78rem;
+    }
+
+    .week {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(34px, 1fr));
+      gap: 8px;
+    }
+
+    .day {
+      display: grid;
+      justify-items: center;
+      gap: 5px;
+      color: var(--muted);
+      font-size: .74rem;
+      min-width: 0;
+    }
+
+    .dot {
+      width: 34px;
+      aspect-ratio: 1;
+      border-radius: 50%;
+      border: 1px solid var(--line);
+      background: #fff;
+      display: grid;
+      place-items: center;
+      color: transparent;
+      padding: 0;
+    }
+
+    .dot.done {
+      background: var(--green);
+      border-color: var(--green);
+      color: #fff;
+    }
+
+    .dot.today {
+      box-shadow: 0 0 0 3px rgba(40, 95, 199, .16);
+    }
+
+    .progress {
+      height: 10px;
+      border-radius: 999px;
+      background: #e5ebf1;
+      overflow: hidden;
+    }
+
+    .bar {
+      height: 100%;
+      width: 0;
+      background: linear-gradient(90deg, var(--green), var(--blue), var(--rose));
+    }
+
+    .month-tools {
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+      gap: 8px;
+      align-items: end;
+    }
+
+    .calendar {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 7px;
+    }
+
+    .calendar-label, .calendar-day {
+      min-height: 34px;
+      display: grid;
+      place-items: center;
+      color: var(--muted);
+      font-size: .76rem;
+    }
+
+    .calendar-day {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      color: var(--ink);
+      padding: 0;
+    }
+
+    .calendar-day.done {
+      color: #fff;
+      border-color: var(--green);
+      background: var(--green);
+    }
+
+    .calendar-day.blank {
+      border-color: transparent;
+      background: transparent;
+      cursor: default;
+    }
+
+    .calendar-day.today {
+      box-shadow: 0 0 0 3px rgba(40, 95, 199, .16);
+    }
+
+    .review {
+      display: grid;
+      gap: 7px;
+      padding: 11px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+    }
+
+    .review p {
+      margin: 0;
+      color: var(--ink);
+      line-height: 1.45;
+      overflow-wrap: anywhere;
+    }
+
+    .review-form {
+      display: grid;
+      gap: 10px;
+    }
+
+    .review-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .mini {
+      color: var(--muted);
+      font-size: .8rem;
+      line-height: 1.45;
+    }
+
+    .empty {
+      border: 1px dashed #aeb8c6;
+      border-radius: 8px;
+      padding: 18px;
+      color: var(--muted);
+      text-align: center;
+      background: rgba(255,255,255,.56);
+    }
+
+    @media (max-width: 1040px) {
+      header {
+        align-items: start;
+        flex-direction: column;
+      }
+
+      .actions { justify-content: start; }
+      .layout { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 780px) {
+      .stats { grid-template-columns: 1fr 1fr; }
+      .form { grid-template-columns: 1fr 1fr; }
+      .form label:first-child { grid-column: 1 / -1; }
+      .form button { grid-column: 1 / -1; }
+    }
+
+    @media (max-width: 560px) {
+      .app { width: min(100vw - 20px, 1260px); padding-top: 16px; }
+      .panel { padding: 12px; border-radius: 10px; }
+      .stats, .form, .review-row, .month-tools { grid-template-columns: 1fr; }
+      .week, .calendar { gap: 6px; }
+      .dot { width: 30px; }
+      .calendar-day { min-height: 31px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header>
+      <div>
+        <h1>Habit Review Board</h1>
+        <div class="sub">一个离线习惯与复盘板。现在它能看本周、补签月份历史、查看单个习惯详情，也能记录每天的情绪和能量。</div>
+      </div>
+      <div class="actions">
+        <button id="sampleBtn" type="button">示例</button>
+        <button id="exportBtn" type="button">导出</button>
+        <button id="clearBtn" type="button">清空</button>
+      </div>
+    </header>
+
+    <section class="layout">
+      <div class="panel">
+        <div class="stats">
+          <div class="stat"><span>习惯</span><b id="habitCount">0</b></div>
+          <div class="stat"><span>今日完成</span><b id="todayDone">0</b></div>
+          <div class="stat"><span>本周完成率</span><b id="weekRate">0%</b></div>
+          <div class="stat"><span>最长连续</span><b id="bestStreak">0</b></div>
+        </div>
+
+        <form class="form" id="habitForm">
+          <label>
+            习惯
+            <input id="habitName" maxlength="80" placeholder="阅读 20 分钟、散步、写日志..." required>
+          </label>
+          <label>
+            目标/周
+            <input id="habitTarget" type="number" min="1" max="7" value="5">
+          </label>
+          <label>
+            最小行动
+            <input id="habitMinimum" maxlength="40" placeholder="2 分钟">
+          </label>
+          <label>
+            颜色
+            <input id="habitColor" type="color" value="#15755d">
+          </label>
+          <button class="primary" type="submit">添加</button>
+        </form>
+
+        <div class="section-title">
+          <h2>本周习惯</h2>
+          <span class="mini" id="weekRange"></span>
+        </div>
+        <div class="habits" id="habits"></div>
+      </div>
+
+      <aside class="side">
+        <div class="panel">
+          <div class="section-title"><h2>习惯详情</h2></div>
+          <div class="detail-grid" id="habitDetail"></div>
+        </div>
+
+        <div class="panel">
+          <div class="section-title"><h2>月视图</h2></div>
+          <div class="month-tools">
+            <label>
+              月份
+              <input id="monthPicker" type="month">
+            </label>
+            <button id="prevMonth" type="button">上月</button>
+            <button id="nextMonth" type="button">下月</button>
+          </div>
+          <div style="height: 12px;"></div>
+          <div class="calendar" id="calendar"></div>
+        </div>
+
+        <div class="panel">
+          <div class="section-title"><h2>今日复盘</h2></div>
+          <div class="review-form">
+            <div class="review-row">
+              <label>
+                情绪
+                <select id="mood">
+                  <option value="平稳">平稳</option>
+                  <option value="兴奋">兴奋</option>
+                  <option value="焦虑">焦虑</option>
+                  <option value="疲惫">疲惫</option>
+                  <option value="低落">低落</option>
+                </select>
+              </label>
+              <label>
+                能量 1-5
+                <input id="energy" type="number" min="1" max="5" value="3">
+              </label>
+            </div>
+            <label>
+              今天发生了什么？
+              <textarea id="reviewText" placeholder="一句就够：做成了什么，卡在哪里，明天少做什么。"></textarea>
+            </label>
+            <button class="primary" id="saveReview" type="button">保存复盘</button>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="section-title"><h2>复盘记录</h2></div>
+          <div class="reviews" id="reviews"></div>
+        </div>
+      </aside>
+    </section>
+  </main>
+
+  <script>
+    const storeKey = "habit-review-board-v2";
+    const oldStoreKey = "habit-review-board-v1";
+    const $ = (id) => document.getElementById(id);
+    let state = {
+      habits: [],
+      reviews: {},
+      selectedHabitId: "",
+      selectedMonth: ""
+    };
+
+    function uid() {
+      return crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    }
+
+    function today() {
+      return new Date().toISOString().slice(0, 10);
+    }
+
+    function currentMonth() {
+      return today().slice(0, 7);
+    }
+
+    function addDays(date, days) {
+      const copy = new Date(date);
+      copy.setDate(copy.getDate() + days);
+      return copy;
+    }
+
+    function iso(date) {
+      return date.toISOString().slice(0, 10);
+    }
+
+    function shiftMonth(yyyyMm, delta) {
+      const [year, month] = yyyyMm.split("-").map(Number);
+      const date = new Date(year, month - 1 + delta, 1);
+      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+    }
+
+    function weekDates() {
+      const now = new Date(`${today()}T00:00:00`);
+      const mondayOffset = (now.getDay() + 6) % 7;
+      const monday = addDays(now, -mondayOffset);
+      return Array.from({ length: 7 }, (_, index) => iso(addDays(monday, index)));
+    }
+
+    function escapeHtml(value) {
+      return String(value || "").replace(/[&<>"']/g, (char) => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#039;"
+      }[char]));
+    }
+
+    function normalizeHabit(habit) {
+      return {
+        id: habit.id || uid(),
+        name: habit.name || "未命名习惯",
+        target: Math.max(1, Math.min(7, Number(habit.target || 3))),
+        color: habit.color || "#15755d",
+        minimum: habit.minimum || "2 分钟",
+        done: habit.done || {},
+        note: habit.note || ""
+      };
+    }
+
+    function normalizeReview(value) {
+      if (typeof value === "string") return { text: value, mood: "平稳", energy: 3 };
+      return { text: value.text || "", mood: value.mood || "平稳", energy: Number(value.energy || 3) };
+    }
+
+    function load() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(storeKey) || localStorage.getItem(oldStoreKey) || "{}");
+        state = { ...state, ...saved };
+      } catch {
+        localStorage.removeItem(storeKey);
+      }
+      state.habits = (state.habits || []).map(normalizeHabit);
+      state.reviews = Object.fromEntries(Object.entries(state.reviews || {}).map(([date, value]) => [date, normalizeReview(value)]));
+      if (!state.habits.length) seed();
+      state.selectedHabitId = state.selectedHabitId || (state.habits[0] && state.habits[0].id) || "";
+      state.selectedMonth = state.selectedMonth || currentMonth();
+      $("monthPicker").value = state.selectedMonth;
+      fillReviewForm();
+    }
+
+    function save() {
+      localStorage.setItem(storeKey, JSON.stringify(state));
+    }
+
+    function seed() {
+      const dates = weekDates();
+      state.habits = [
+        { id: uid(), name: "阅读 20 分钟", target: 5, minimum: "翻开读 2 页", color: "#285fc7", done: Object.fromEntries(dates.slice(0, 4).map((date) => [date, true])), note: "睡前比白天更容易稳定执行。" },
+        { id: uid(), name: "散步", target: 4, minimum: "下楼 5 分钟", color: "#15755d", done: Object.fromEntries([dates[0], dates[2], dates[4]].map((date) => [date, true])), note: "午饭后做，阻力最低。" },
+        { id: uid(), name: "写三句话复盘", target: 6, minimum: "写一句也算", color: "#b7435f", done: Object.fromEntries(dates.slice(0, 5).map((date) => [date, true])), note: "不要写太长，否则第二天会抗拒。" }
+      ];
+      state.reviews = {
+        [today()]: { text: "今天适合保持轻量推进：完成比完美更重要。", mood: "平稳", energy: 3 }
+      };
+      state.selectedHabitId = state.habits[0].id;
+      state.selectedMonth = currentMonth();
+    }
+
+    function selectedHabit() {
+      return state.habits.find((habit) => habit.id === state.selectedHabitId) || state.habits[0];
+    }
+
+    function fillReviewForm() {
+      const review = state.reviews[today()] || { text: "", mood: "平稳", energy: 3 };
+      $("reviewText").value = review.text || "";
+      $("mood").value = review.mood || "平稳";
+      $("energy").value = review.energy || 3;
+    }
+
+    function streak(habit, startDate = today()) {
+      let count = 0;
+      let cursor = new Date(`${startDate}T00:00:00`);
+      while (habit.done && habit.done[iso(cursor)]) {
+        count += 1;
+        cursor = addDays(cursor, -1);
+      }
+      return count;
+    }
+
+    function longestStreak(habit) {
+      const dates = Object.keys(habit.done || {}).filter((date) => habit.done[date]).sort();
+      let best = 0;
+      let run = 0;
+      let prev = "";
+      dates.forEach((date) => {
+        const expected = prev ? iso(addDays(new Date(`${prev}T00:00:00`), 1)) : "";
+        run = prev && date === expected ? run + 1 : 1;
+        best = Math.max(best, run);
+        prev = date;
+      });
+      return best;
+    }
+
+    function weekDoneCount(habit) {
+      return weekDates().filter((date) => habit.done && habit.done[date]).length;
+    }
+
+    function monthDates(month) {
+      const [year, monthIndex] = month.split("-").map(Number);
+      const days = new Date(year, monthIndex, 0).getDate();
+      return Array.from({ length: days }, (_, index) => `${month}-${String(index + 1).padStart(2, "0")}`);
+    }
+
+    function monthDoneCount(habit, month = state.selectedMonth) {
+      return monthDates(month).filter((date) => habit.done && habit.done[date]).length;
+    }
+
+    function renderStats() {
+      const possible = state.habits.length * 7;
+      const done = state.habits.reduce((sum, habit) => sum + weekDoneCount(habit), 0);
+      const best = Math.max(0, ...state.habits.map(longestStreak));
+      const week = weekDates();
+      $("habitCount").textContent = state.habits.length;
+      $("todayDone").textContent = state.habits.filter((habit) => habit.done && habit.done[today()]).length;
+      $("weekRate").textContent = `${possible ? Math.round(done / possible * 100) : 0}%`;
+      $("bestStreak").textContent = best;
+      $("weekRange").textContent = `${week[0].slice(5)} - ${week[6].slice(5)}`;
+    }
+
+    function renderHabits() {
+      const dates = weekDates();
+      const names = ["一", "二", "三", "四", "五", "六", "日"];
+      $("habits").innerHTML = state.habits.length ? state.habits.map((habit) => {
+        const completed = weekDoneCount(habit);
+        const rate = Math.round(completed / Math.max(Number(habit.target || 1), 1) * 100);
+        return `
+          <article class="habit ${habit.id === state.selectedHabitId ? "active" : ""}">
+            <div class="habit-head">
+              <strong>${escapeHtml(habit.name)}</strong>
+              <div class="inline-actions">
+                <button type="button" data-select="${habit.id}">详情</button>
+                <button class="icon" title="删除习惯" aria-label="删除习惯" data-remove="${habit.id}">x</button>
+              </div>
+            </div>
+            <div class="meta">
+              <span class="pill">目标 ${habit.target}/周</span>
+              <span class="pill">连续 ${streak(habit)} 天</span>
+              <span class="pill">最长 ${longestStreak(habit)} 天</span>
+              <span class="pill">${escapeHtml(habit.minimum)}</span>
+            </div>
+            <div class="week">
+              ${dates.map((date, index) => `
+                <div class="day">
+                  <button class="dot ${habit.done && habit.done[date] ? "done" : ""} ${date === today() ? "today" : ""}" style="${habit.done && habit.done[date] ? `background:${habit.color};border-color:${habit.color}` : ""}" data-toggle="${habit.id}" data-date="${date}" title="${date}">✓</button>
+                  <span>${names[index]}</span>
+                </div>
+              `).join("")}
+            </div>
+            <div class="progress"><div class="bar" style="width: ${Math.min(rate, 100)}%; background: ${habit.color};"></div></div>
+          </article>
+        `;
+      }).join("") : `<div class="empty">还没有习惯。</div>`;
+    }
+
+    function renderHabitDetail() {
+      const habit = selectedHabit();
+      if (!habit) {
+        $("habitDetail").innerHTML = `<div class="empty">选择一个习惯查看详情。</div>`;
+        return;
+      }
+      const monthCount = monthDoneCount(habit);
+      const monthTotal = monthDates(state.selectedMonth).length;
+      $("habitDetail").innerHTML = `
+        <div class="line">
+          <strong>${escapeHtml(habit.name)}</strong>
+          <span class="pill" style="color:${habit.color}">${state.selectedMonth}</span>
+        </div>
+        <div class="detail-grid" style="grid-template-columns: repeat(3, 1fr);">
+          <div class="detail-stat"><span>本月</span><b>${monthCount}</b></div>
+          <div class="detail-stat"><span>连续</span><b>${streak(habit)}</b></div>
+          <div class="detail-stat"><span>最长</span><b>${longestStreak(habit)}</b></div>
+        </div>
+        <label>
+          目标/周
+          <input type="number" min="1" max="7" value="${habit.target}" data-edit-target="${habit.id}">
+        </label>
+        <label>
+          最小行动
+          <input maxlength="40" value="${escapeHtml(habit.minimum)}" data-edit-minimum="${habit.id}">
+        </label>
+        <label>
+          执行提示
+          <textarea data-edit-note="${habit.id}" placeholder="什么时候做最容易？失败通常卡在哪里？">${escapeHtml(habit.note)}</textarea>
+        </label>
+        <div class="progress"><div class="bar" style="width:${Math.round(monthCount / Math.max(monthTotal, 1) * 100)}%; background:${habit.color};"></div></div>
+        <div class="mini">月视图可补签或取消任意一天。</div>
+      `;
+    }
+
+    function renderCalendar() {
+      const habit = selectedHabit();
+      const names = ["一", "二", "三", "四", "五", "六", "日"];
+      if (!habit) {
+        $("calendar").innerHTML = `<div class="empty">还没有习惯。</div>`;
+        return;
+      }
+      const dates = monthDates(state.selectedMonth);
+      const first = new Date(`${dates[0]}T00:00:00`);
+      const blanks = (first.getDay() + 6) % 7;
+      const cells = [
+        ...names.map((name) => `<div class="calendar-label">${name}</div>`),
+        ...Array.from({ length: blanks }, () => `<button class="calendar-day blank" type="button" tabindex="-1"></button>`),
+        ...dates.map((date) => `
+          <button class="calendar-day ${habit.done && habit.done[date] ? "done" : ""} ${date === today() ? "today" : ""}" type="button" data-month-toggle="${date}" style="${habit.done && habit.done[date] ? `background:${habit.color};border-color:${habit.color}` : ""}">
+            ${Number(date.slice(-2))}
+          </button>
+        `)
+      ];
+      $("calendar").innerHTML = cells.join("");
+    }
+
+    function renderReviews() {
+      const rows = Object.entries(state.reviews)
+        .filter(([, review]) => (review.text || "").trim())
+        .sort((a, b) => b[0].localeCompare(a[0]))
+        .slice(0, 8);
+      $("reviews").innerHTML = rows.length ? rows.map(([date, review]) => `
+        <article class="review">
+          <div class="line">
+            <strong>${date}</strong>
+            <button class="icon" title="删除复盘" aria-label="删除复盘" data-remove-review="${date}">x</button>
+          </div>
+          <div class="meta">
+            <span class="pill">${escapeHtml(review.mood)}</span>
+            <span class="pill">能量 ${review.energy}/5</span>
+          </div>
+          <p>${escapeHtml(review.text)}</p>
+        </article>
+      `).join("") : `<div class="empty">还没有复盘。</div>`;
+    }
+
+    function renderAll() {
+      renderStats();
+      renderHabits();
+      renderHabitDetail();
+      renderCalendar();
+      renderReviews();
+      save();
+    }
+
+    $("habitForm").addEventListener("submit", (event) => {
+      event.preventDefault();
+      const habit = {
+        id: uid(),
+        name: $("habitName").value.trim(),
+        target: Math.max(1, Math.min(7, Number($("habitTarget").value || 1))),
+        color: $("habitColor").value,
+        minimum: $("habitMinimum").value.trim() || "2 分钟",
+        done: {},
+        note: ""
+      };
+      state.habits.push(habit);
+      state.selectedHabitId = habit.id;
+      $("habitName").value = "";
+      $("habitMinimum").value = "";
+      renderAll();
+    });
+
+    $("habits").addEventListener("click", (event) => {
+      const toggle = event.target.dataset.toggle;
+      const remove = event.target.dataset.remove;
+      const select = event.target.dataset.select;
+      if (select) state.selectedHabitId = select;
+      if (toggle) {
+        const habit = state.habits.find((item) => item.id === toggle);
+        habit.done = habit.done || {};
+        habit.done[event.target.dataset.date] = !habit.done[event.target.dataset.date];
+        if (!habit.done[event.target.dataset.date]) delete habit.done[event.target.dataset.date];
+        state.selectedHabitId = habit.id;
+      }
+      if (remove) {
+        state.habits = state.habits.filter((item) => item.id !== remove);
+        state.selectedHabitId = state.habits[0] ? state.habits[0].id : "";
+      }
+      renderAll();
+    });
+
+    $("habitDetail").addEventListener("input", (event) => {
+      const targetId = event.target.dataset.editTarget;
+      const minimumId = event.target.dataset.editMinimum;
+      const noteId = event.target.dataset.editNote;
+      const id = targetId || minimumId || noteId;
+      if (!id) return;
+      const habit = state.habits.find((item) => item.id === id);
+      if (targetId) habit.target = Math.max(1, Math.min(7, Number(event.target.value || 1)));
+      if (minimumId) habit.minimum = event.target.value;
+      if (noteId) habit.note = event.target.value;
+      renderAll();
+    });
+
+    $("calendar").addEventListener("click", (event) => {
+      const date = event.target.dataset.monthToggle;
+      const habit = selectedHabit();
+      if (!date || !habit) return;
+      habit.done = habit.done || {};
+      habit.done[date] = !habit.done[date];
+      if (!habit.done[date]) delete habit.done[date];
+      renderAll();
+    });
+
+    $("monthPicker").addEventListener("input", () => {
+      state.selectedMonth = $("monthPicker").value || currentMonth();
+      renderAll();
+    });
+
+    $("prevMonth").addEventListener("click", () => {
+      state.selectedMonth = shiftMonth(state.selectedMonth, -1);
+      $("monthPicker").value = state.selectedMonth;
+      renderAll();
+    });
+
+    $("nextMonth").addEventListener("click", () => {
+      state.selectedMonth = shiftMonth(state.selectedMonth, 1);
+      $("monthPicker").value = state.selectedMonth;
+      renderAll();
+    });
+
+    $("saveReview").addEventListener("click", () => {
+      state.reviews[today()] = {
+        text: $("reviewText").value.trim(),
+        mood: $("mood").value,
+        energy: Math.max(1, Math.min(5, Number($("energy").value || 3)))
+      };
+      renderAll();
+    });
+
+    $("reviews").addEventListener("click", (event) => {
+      const date = event.target.dataset.removeReview;
+      if (!date) return;
+      delete state.reviews[date];
+      if (date === today()) fillReviewForm();
+      renderAll();
+    });
+
+    async function copyText(text) {
+      try {
+        await navigator.clipboard.writeText(text);
+      } catch {
+        const scratch = document.createElement("textarea");
+        scratch.value = text;
+        scratch.style.position = "fixed";
+        scratch.style.left = "-9999px";
+        document.body.appendChild(scratch);
+        scratch.focus();
+        scratch.select();
+        document.execCommand("copy");
+        scratch.remove();
+      }
+    }
+
+    $("exportBtn").addEventListener("click", async () => {
+      const lines = [
+        "Habit Review Board",
+        "",
+        "Habits:",
+        ...state.habits.map((habit) => `- ${habit.name}: 本周 ${weekDoneCount(habit)}/7, 本月 ${monthDoneCount(habit)}/${monthDates(state.selectedMonth).length}, 连续 ${streak(habit)} 天, 最长 ${longestStreak(habit)} 天, 最小行动: ${habit.minimum}`),
+        "",
+        "Reviews:",
+        ...Object.entries(state.reviews).sort((a, b) => b[0].localeCompare(a[0])).map(([date, review]) => `- ${date}: ${review.mood} / 能量 ${review.energy}/5 / ${review.text}`)
+      ];
+      await copyText(lines.join("\n"));
+      $("exportBtn").textContent = "已复制";
+      setTimeout(() => $("exportBtn").textContent = "导出", 1100);
+    });
+
+    $("sampleBtn").addEventListener("click", () => {
+      seed();
+      $("monthPicker").value = state.selectedMonth;
+      fillReviewForm();
+      renderAll();
+    });
+
+    $("clearBtn").addEventListener("click", () => {
+      state = { habits: [], reviews: {}, selectedHabitId: "", selectedMonth: currentMonth() };
+      $("monthPicker").value = state.selectedMonth;
+      fillReviewForm();
+      renderAll();
+    });
+
+    load();
+    renderAll();
+  </script>
+</body>
+</html>

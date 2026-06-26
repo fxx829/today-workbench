@@ -1,0 +1,712 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Today Workbench</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #1d2430;
+      --muted: #697386;
+      --line: #d9dee8;
+      --panel: #ffffff;
+      --paper: #f5f7fb;
+      --blue: #2563eb;
+      --green: #16835f;
+      --amber: #b66a12;
+      --red: #c2413b;
+      --shadow: 0 18px 46px rgba(32, 41, 58, .12);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--ink);
+      background:
+        linear-gradient(120deg, rgba(37, 99, 235, .08), transparent 36%),
+        linear-gradient(240deg, rgba(22, 131, 95, .10), transparent 35%),
+        var(--paper);
+    }
+
+    button, input, select, textarea {
+      font: inherit;
+    }
+
+    button {
+      border: 1px solid var(--line);
+      background: var(--panel);
+      color: var(--ink);
+      border-radius: 8px;
+      min-height: 38px;
+      padding: 0 12px;
+      cursor: pointer;
+    }
+
+    button:hover { border-color: #aeb8c8; }
+    button.primary { background: var(--blue); border-color: var(--blue); color: #fff; }
+    button.ghost { background: transparent; }
+    button.icon { width: 38px; padding: 0; display: inline-grid; place-items: center; }
+
+    .app {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 26px 20px 38px;
+    }
+
+    header {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 20px;
+      padding: 14px 0 22px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(2rem, 5vw, 4.5rem);
+      line-height: .95;
+      letter-spacing: 0;
+    }
+
+    .date {
+      color: var(--muted);
+      margin-top: 10px;
+      font-size: 1rem;
+    }
+
+    .top-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: flex-end;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 1.25fr .75fr;
+      gap: 18px;
+      align-items: start;
+    }
+
+    .band {
+      background: rgba(255, 255, 255, .72);
+      border: 1px solid rgba(217, 222, 232, .9);
+      box-shadow: var(--shadow);
+      border-radius: 12px;
+      padding: 16px;
+      backdrop-filter: blur(12px);
+    }
+
+    .section-title {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    h2 {
+      margin: 0;
+      font-size: 1rem;
+      letter-spacing: 0;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: minmax(160px, 1fr) 120px 120px auto;
+      gap: 10px;
+      align-items: end;
+    }
+
+    label {
+      display: grid;
+      gap: 6px;
+      color: var(--muted);
+      font-size: .82rem;
+    }
+
+    input, select, textarea {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      color: var(--ink);
+      min-height: 38px;
+      padding: 8px 10px;
+      outline: none;
+    }
+
+    textarea {
+      min-height: 116px;
+      resize: vertical;
+      line-height: 1.45;
+    }
+
+    input:focus, select:focus, textarea:focus {
+      border-color: var(--blue);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, .12);
+    }
+
+    .filters, .timer-controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .chip {
+      min-height: 34px;
+      padding: 0 11px;
+      border-radius: 999px;
+      color: var(--muted);
+    }
+
+    .chip.active {
+      color: #fff;
+      background: var(--ink);
+      border-color: var(--ink);
+    }
+
+    .tasks {
+      display: grid;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .task {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: 12px;
+      align-items: center;
+      padding: 12px;
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+    }
+
+    .task.done {
+      opacity: .58;
+    }
+
+    .task.done .task-name {
+      text-decoration: line-through;
+    }
+
+    .task-name {
+      font-weight: 700;
+      overflow-wrap: anywhere;
+    }
+
+    .meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 5px;
+      color: var(--muted);
+      font-size: .82rem;
+    }
+
+    .pill {
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 2px 8px;
+      background: #fafbfe;
+    }
+
+    .priority-high { color: var(--red); }
+    .priority-medium { color: var(--amber); }
+    .priority-low { color: var(--green); }
+
+    .empty {
+      border: 1px dashed #b8c1cf;
+      border-radius: 8px;
+      color: var(--muted);
+      padding: 18px;
+      text-align: center;
+      background: rgba(255,255,255,.5);
+    }
+
+    .side {
+      display: grid;
+      gap: 18px;
+    }
+
+    .timer {
+      display: grid;
+      gap: 12px;
+    }
+
+    .time {
+      font-variant-numeric: tabular-nums;
+      font-size: clamp(2.8rem, 9vw, 5.1rem);
+      line-height: 1;
+      font-weight: 800;
+      letter-spacing: 0;
+    }
+
+    .progress {
+      height: 10px;
+      border-radius: 999px;
+      overflow: hidden;
+      background: #e5e9f1;
+    }
+
+    .bar {
+      height: 100%;
+      width: 100%;
+      background: linear-gradient(90deg, var(--green), var(--blue));
+      transition: width .2s ease;
+    }
+
+    .suggestion {
+      display: grid;
+      gap: 8px;
+      padding: 13px;
+      border-radius: 8px;
+      background: #fff;
+      border: 1px solid var(--line);
+    }
+
+    .suggestion strong {
+      overflow-wrap: anywhere;
+    }
+
+    .note-tools {
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
+      margin-top: 8px;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+
+    .stat {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 12px;
+    }
+
+    .stat b {
+      display: block;
+      font-size: 1.5rem;
+      line-height: 1;
+      margin-bottom: 5px;
+    }
+
+    .stat span {
+      color: var(--muted);
+      font-size: .8rem;
+    }
+
+    @media (max-width: 840px) {
+      header {
+        align-items: start;
+        flex-direction: column;
+      }
+
+      .top-actions {
+        justify-content: start;
+      }
+
+      .layout {
+        grid-template-columns: 1fr;
+      }
+
+      .form-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .form-grid label:first-child {
+        grid-column: 1 / -1;
+      }
+    }
+
+    @media (max-width: 560px) {
+      .app { padding: 18px 12px 28px; }
+      .band { padding: 13px; border-radius: 10px; }
+      .form-grid, .stats { grid-template-columns: 1fr; }
+      .task { grid-template-columns: auto 1fr; }
+      .task .remove { grid-column: 2; justify-self: end; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header>
+      <div>
+        <h1>Today Workbench</h1>
+        <div class="date" id="today"></div>
+      </div>
+      <div class="top-actions">
+        <button id="seedBtn" title="填入一组示例任务">示例</button>
+        <button id="exportBtn" title="导出今天的任务和笔记">导出</button>
+        <button id="clearDoneBtn" title="清理已完成任务">清理完成</button>
+      </div>
+    </header>
+
+    <section class="layout">
+      <div class="band">
+        <div class="section-title">
+          <h2>任务队列</h2>
+          <div class="filters" id="filters"></div>
+        </div>
+
+        <form class="form-grid" id="taskForm">
+          <label>
+            任务
+            <input id="taskName" maxlength="96" placeholder="写下下一件具体的事" required>
+          </label>
+          <label>
+            优先级
+            <select id="taskPriority">
+              <option value="high">高</option>
+              <option value="medium" selected>中</option>
+              <option value="low">低</option>
+            </select>
+          </label>
+          <label>
+            精力
+            <select id="taskEnergy">
+              <option value="deep">深度</option>
+              <option value="steady" selected>平稳</option>
+              <option value="light">轻量</option>
+            </select>
+          </label>
+          <button class="primary" type="submit">添加</button>
+        </form>
+
+        <div class="tasks" id="taskList"></div>
+      </div>
+
+      <aside class="side">
+        <div class="band timer">
+          <div class="section-title">
+            <h2>专注钟</h2>
+            <select id="timerMode" aria-label="计时模式">
+              <option value="1500">25 分钟</option>
+              <option value="900">15 分钟</option>
+              <option value="300">5 分钟</option>
+            </select>
+          </div>
+          <div class="time" id="time">25:00</div>
+          <div class="progress"><div class="bar" id="bar"></div></div>
+          <div class="timer-controls">
+            <button class="primary" id="startPause" type="button">开始</button>
+            <button id="resetTimer" type="button">重置</button>
+          </div>
+        </div>
+
+        <div class="band">
+          <div class="section-title">
+            <h2>下一步</h2>
+            <button id="pickBtn" type="button">换一个</button>
+          </div>
+          <div class="suggestion" id="suggestion"></div>
+        </div>
+
+        <div class="band">
+          <div class="section-title"><h2>今日统计</h2></div>
+          <div class="stats">
+            <div class="stat"><b id="openCount">0</b><span>待办</span></div>
+            <div class="stat"><b id="doneCount">0</b><span>完成</span></div>
+            <div class="stat"><b id="focusCount">0</b><span>专注轮</span></div>
+          </div>
+        </div>
+
+        <div class="band">
+          <div class="section-title"><h2>速记</h2></div>
+          <textarea id="notes" placeholder="放下临时想法、复盘或明天再看的线索"></textarea>
+          <div class="note-tools">
+            <button id="copyNoteBtn" type="button">复制</button>
+          </div>
+        </div>
+      </aside>
+    </section>
+  </main>
+
+  <script>
+    const storeKey = "today-workbench-v1";
+    const labels = {
+      all: "全部",
+      high: "高优先",
+      deep: "深度",
+      light: "轻量",
+      done: "完成"
+    };
+    const priorityLabel = { high: "高", medium: "中", low: "低" };
+    const energyLabel = { deep: "深度", steady: "平稳", light: "轻量" };
+
+    let state = {
+      tasks: [],
+      notes: "",
+      focusRounds: 0,
+      filter: "all",
+      suggestionCursor: 0
+    };
+
+    let timer = {
+      total: 1500,
+      remaining: 1500,
+      running: false,
+      id: null
+    };
+
+    const $ = (id) => document.getElementById(id);
+
+    function load() {
+      try {
+        state = { ...state, ...JSON.parse(localStorage.getItem(storeKey) || "{}") };
+      } catch {
+        localStorage.removeItem(storeKey);
+      }
+      $("notes").value = state.notes || "";
+    }
+
+    function save() {
+      localStorage.setItem(storeKey, JSON.stringify(state));
+    }
+
+    function formatDate() {
+      const date = new Date();
+      $("today").textContent = new Intl.DateTimeFormat("zh-CN", {
+        dateStyle: "full",
+        timeZone: "Asia/Shanghai"
+      }).format(date);
+    }
+
+    function renderFilters() {
+      $("filters").innerHTML = Object.entries(labels).map(([key, label]) =>
+        `<button type="button" class="chip ${state.filter === key ? "active" : ""}" data-filter="${key}">${label}</button>`
+      ).join("");
+    }
+
+    function visibleTasks() {
+      return state.tasks.filter((task) => {
+        if (state.filter === "all") return !task.done;
+        if (state.filter === "done") return task.done;
+        if (state.filter === "high") return !task.done && task.priority === "high";
+        if (state.filter === "deep") return !task.done && task.energy === "deep";
+        if (state.filter === "light") return !task.done && task.energy === "light";
+        return true;
+      });
+    }
+
+    function renderTasks() {
+      const tasks = visibleTasks();
+      $("taskList").innerHTML = tasks.length ? tasks.map((task) => `
+        <article class="task ${task.done ? "done" : ""}">
+          <input type="checkbox" ${task.done ? "checked" : ""} data-toggle="${task.id}" aria-label="标记完成">
+          <div>
+            <div class="task-name">${escapeHtml(task.name)}</div>
+            <div class="meta">
+              <span class="pill priority-${task.priority}">${priorityLabel[task.priority]}</span>
+              <span class="pill">${energyLabel[task.energy]}</span>
+            </div>
+          </div>
+          <button class="icon remove" data-remove="${task.id}" title="删除" aria-label="删除任务">x</button>
+        </article>
+      `).join("") : `<div class="empty">这里暂时清爽。加一件事，或者换个筛选。</div>`;
+    }
+
+    function renderStats() {
+      $("openCount").textContent = state.tasks.filter((task) => !task.done).length;
+      $("doneCount").textContent = state.tasks.filter((task) => task.done).length;
+      $("focusCount").textContent = state.focusRounds;
+    }
+
+    function pickTask() {
+      const open = state.tasks.filter((task) => !task.done);
+      const ordered = [...open].sort((a, b) => score(b) - score(a));
+      const pick = ordered[state.suggestionCursor % Math.max(ordered.length, 1)];
+      $("suggestion").innerHTML = pick ? `
+        <span class="pill">${energyLabel[pick.energy]}</span>
+        <strong>${escapeHtml(pick.name)}</strong>
+        <span class="meta">先做 10 分钟，能推进就继续，卡住就写下阻碍。</span>
+      ` : `<span class="meta">队列空着。写下一件可以在 10 分钟内开始的事。</span>`;
+    }
+
+    function score(task) {
+      const priority = { high: 3, medium: 2, low: 1 }[task.priority];
+      const energy = { deep: 3, steady: 2, light: 1 }[task.energy];
+      return priority * 10 + energy - (task.done ? 100 : 0);
+    }
+
+    function renderTimer() {
+      const mins = String(Math.floor(timer.remaining / 60)).padStart(2, "0");
+      const secs = String(timer.remaining % 60).padStart(2, "0");
+      $("time").textContent = `${mins}:${secs}`;
+      $("bar").style.width = `${Math.max(0, timer.remaining / timer.total * 100)}%`;
+      $("startPause").textContent = timer.running ? "暂停" : "开始";
+    }
+
+    function tick() {
+      timer.remaining -= 1;
+      if (timer.remaining <= 0) {
+        timer.remaining = 0;
+        timer.running = false;
+        clearInterval(timer.id);
+        state.focusRounds += 1;
+        save();
+        renderStats();
+      }
+      renderTimer();
+    }
+
+    function escapeHtml(value) {
+      return value.replace(/[&<>"']/g, (char) => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#039;"
+      }[char]));
+    }
+
+    async function copyText(text, button, label) {
+      try {
+        await navigator.clipboard.writeText(text);
+      } catch {
+        const scratch = document.createElement("textarea");
+        scratch.value = text;
+        scratch.style.position = "fixed";
+        scratch.style.left = "-9999px";
+        document.body.appendChild(scratch);
+        scratch.focus();
+        scratch.select();
+        document.execCommand("copy");
+        scratch.remove();
+      }
+      button.textContent = "已复制";
+      setTimeout(() => button.textContent = label, 1100);
+    }
+
+    function newId() {
+      return crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    }
+
+    function exportText() {
+      const lines = [
+        "Today Workbench",
+        $("today").textContent,
+        "",
+        "Tasks:",
+        ...state.tasks.map((task) => `${task.done ? "[x]" : "[ ]"} ${task.name} (${priorityLabel[task.priority]} / ${energyLabel[task.energy]})`),
+        "",
+        "Notes:",
+        state.notes || ""
+      ];
+      copyText(lines.join("\n"), $("exportBtn"), "导出");
+    }
+
+    function renderAll() {
+      renderFilters();
+      renderTasks();
+      renderStats();
+      pickTask();
+      save();
+    }
+
+    $("taskForm").addEventListener("submit", (event) => {
+      event.preventDefault();
+      state.tasks.push({
+        id: newId(),
+        name: $("taskName").value.trim(),
+        priority: $("taskPriority").value,
+        energy: $("taskEnergy").value,
+        done: false
+      });
+      state.suggestionCursor = 0;
+      $("taskName").value = "";
+      renderAll();
+    });
+
+    $("filters").addEventListener("click", (event) => {
+      const filter = event.target.dataset.filter;
+      if (!filter) return;
+      state.filter = filter;
+      renderAll();
+    });
+
+    $("taskList").addEventListener("click", (event) => {
+      const toggle = event.target.dataset.toggle;
+      const remove = event.target.dataset.remove;
+      if (toggle) {
+        const task = state.tasks.find((item) => item.id === toggle);
+        task.done = event.target.checked;
+      }
+      if (remove) {
+        state.tasks = state.tasks.filter((item) => item.id !== remove);
+      }
+      renderAll();
+    });
+
+    $("notes").addEventListener("input", () => {
+      state.notes = $("notes").value;
+      save();
+    });
+
+    $("timerMode").addEventListener("change", () => {
+      clearInterval(timer.id);
+      timer.total = Number($("timerMode").value);
+      timer.remaining = timer.total;
+      timer.running = false;
+      renderTimer();
+    });
+
+    $("startPause").addEventListener("click", () => {
+      timer.running = !timer.running;
+      clearInterval(timer.id);
+      if (timer.running) timer.id = setInterval(tick, 1000);
+      renderTimer();
+    });
+
+    $("resetTimer").addEventListener("click", () => {
+      clearInterval(timer.id);
+      timer.remaining = timer.total;
+      timer.running = false;
+      renderTimer();
+    });
+
+    $("pickBtn").addEventListener("click", () => {
+      const open = state.tasks.filter((task) => !task.done);
+      state.suggestionCursor = open.length ? state.suggestionCursor + 1 : 0;
+      renderAll();
+    });
+
+    $("clearDoneBtn").addEventListener("click", () => {
+      state.tasks = state.tasks.filter((task) => !task.done);
+      renderAll();
+    });
+
+    $("seedBtn").addEventListener("click", () => {
+      if (state.tasks.length) return;
+      state.tasks = [
+        { id: newId(), name: "整理今天最重要的三个结果", priority: "high", energy: "steady", done: false },
+        { id: newId(), name: "推进一个需要深度思考的卡点", priority: "high", energy: "deep", done: false },
+        { id: newId(), name: "处理五分钟内能结束的小尾巴", priority: "medium", energy: "light", done: false }
+      ];
+      state.suggestionCursor = 0;
+      renderAll();
+    });
+
+    $("exportBtn").addEventListener("click", exportText);
+
+    $("copyNoteBtn").addEventListener("click", () => {
+      copyText($("notes").value, $("copyNoteBtn"), "复制");
+    });
+
+    load();
+    formatDate();
+    renderAll();
+    renderTimer();
+  </script>
+</body>
+</html>
